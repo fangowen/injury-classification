@@ -20,7 +20,13 @@ def rerank_by_population(chunks: list[dict], athlete_context: str) -> list[dict]
 
     #sort by population score descending
     reranked.sort(key=lambda x: (x["population_score"], x["score"]), reverse=True)
-    return reranked
+    seen = {}
+    for r in reranked:
+        pmid = r["pmid"]
+        if pmid not in seen or r['score'] > seen[pmid]['score']:
+            seen[pmid] = r
+    
+    return list(seen.values())
 
 def _score_population_relevance(chunk: dict, athlete_context: str) -> dict:
     """Score population relevance for a chunk"""
@@ -46,7 +52,7 @@ Respond with ONLY a JSON object:
 {{"score": <1-5>, "reason": "<one sentence explaining your rating>"}}"""
     
     response = client.messages.create(
-        model="claude-sonnet-4",
+        model="claude-sonnet-4-5",
         max_tokens=150,
         messages=[{"role": "user", "content": prompt}],
     )
