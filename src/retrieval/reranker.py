@@ -4,29 +4,30 @@ import anthropic
 import json
 from dotenv import load_dotenv
 import os
+from concurrent.futures import ThreadPoolExecutor
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
+
+
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+#rerank function with parallel processing, max 10 workers
 def rerank_by_population(chunks: list[dict], athlete_context: str) -> list[dict]:
     """Rerank chunks based on population relevance"""
     if not chunks: return []
-
-    reranked = []
-    for chunk in chunks:
-        score = _score_population_relevance(chunk, athlete_context)
-        scored_chunk = {**chunk, "population_score": score["score"], "population_reason": score["reason"]}
-        reranked.append(scored_chunk)
-
-    #sort by population score descending
-    reranked.sort(key=lambda x: (x["population_score"], x["score"]), reverse=True)
-    seen = {}
-    for r in reranked:
-        pmid = r["pmid"]
-        if pmid not in seen or r['score'] > seen[pmid]['score']:
-            seen[pmid] = r
+    #helper function to score a chunk
+    def score(r):
+        s = _score_population_relevance(r, athlete_context)
+        return {**r, "population_score": s["score"], "population_reason": s["reason"]}
     
-    return list(seen.values())
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        reranked = list(executor.map(score, chunks))
+    #sort by population score descending
+    reranked.sort(
+        key=lambda x: (x["population_score"], x["score"]),
+        reverse=True,
+    )
+    return reranked
 
 def _score_population_relevance(chunk: dict, athlete_context: str) -> dict:
     """Score population relevance for a chunk"""
