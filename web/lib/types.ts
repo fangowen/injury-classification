@@ -18,6 +18,22 @@ export interface RetrievedChunk {
   diagnosis?: string;
   population_score?: number;
   population_reason?: string;
+  authors?: string[];
+}
+
+export interface FinalSource {
+  index: number;
+  pmid: string;
+  title: string;
+  year?: string | null;
+  study_design?: string | null;
+  population_score?: number | null;
+  population_reason?: string | null;
+  score?: number | null;
+  text: string;
+  authors: string[];
+  author_line: string;
+  diagnosis?: string | null;
 }
 
 export interface AthleteContextInput {
@@ -39,6 +55,7 @@ export type AgentEvent =
   | { event: "ingest_started"; data: { condition: string; query: string; attempt: number } }
   | { event: "ingest_complete"; data: { targets: { condition: string; query: string }[]; attempt: number } }
   | { event: "rerank_complete"; data: { results: RetrievedChunk[] } }
+  | { event: "final_sources"; data: { sources: FinalSource[] } }
   | { event: "report_token"; data: { token: string } }
   | { event: "report_complete"; data: { report: string } }
   | { event: "done"; data: { red_flags: boolean; weak_diagnoses: string[]; ingest_attempts: number } }

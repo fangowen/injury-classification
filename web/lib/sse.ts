@@ -33,6 +33,7 @@ export function openStream(
     "ingest_started",
     "ingest_complete",
     "rerank_complete",
+    "final_sources",
     "report_token",
     "report_complete",
     "done",

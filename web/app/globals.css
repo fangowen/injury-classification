@@ -2,60 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
+@layer base {
+  :root {
+    --bg:          245 241 232;  /* warm cream */
+    --surface:     252 249 240;  /* lighter cream */
+    --surface-2:   238 232 217;  /* deeper cream */
+    --border:      223 215 195;  /* tan border */
+    --fg:           28  28  28;  /* near-black */
+    --muted:       115 108  92;  /* warm gray */
+    --subtle:      165 156 136;  /* lighter warm gray */
+    --accent:       54  94  71;  /* forest green */
+    --accent-soft: 217 229 214;  /* pale mint */
+    --accent-tint: 233 240 229;  /* even paler mint for chip */
+  }
+
+  html, body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    height: 100%;
+  }
+  body {
+    font-feature-settings: "ss01", "cv02", "cv03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent) / 0.20);
+  }
 }
 
-html, body {
-  height: 100%;
-  background: #f6f7f9;
-  color: #11141c;
+@layer components {
+  .card {
+    @apply rounded-2xl border border-border bg-surface;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-tint px-3 py-1 text-sm font-medium text-accent;
+  }
+  .meta {
+    @apply font-mono text-xs tracking-tight text-muted;
+  }
+  .pill-input {
+    @apply w-full rounded-full border border-border bg-surface px-6 py-4 text-base text-fg shadow-[0_1px_0_rgba(0,0,0,0.02)] outline-none transition placeholder:text-subtle focus:border-accent/60 focus:ring-2 focus:ring-accent/15 disabled:opacity-60;
+  }
+  .btn-send {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-bg shadow-sm transition hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-transparent px-4 py-2 text-sm text-muted transition hover:bg-surface-2 hover:text-fg;
+  }
+  .btn-context {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted transition hover:border-accent/40 hover:text-fg;
+  }
 }
 
-.markdown {
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-.markdown h1 { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0.75rem; }
-.markdown h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; }
-.markdown h3 { font-size: 1.05rem; font-weight: 600; margin: 0.75rem 0 0.4rem; }
-.markdown h4 { font-size: 1rem;    font-weight: 600; margin: 0.6rem 0 0.3rem; }
-.markdown p  { margin: 0.4rem 0; }
-.markdown ul { list-style: disc; padding-left: 1.25rem; margin: 0.4rem 0; }
-.markdown ol { list-style: decimal; padding-left: 1.25rem; margin: 0.4rem 0; }
-.markdown li { margin: 0.15rem 0; }
-.markdown strong { font-weight: 600; }
-.markdown code {
-  background: #eceef2;
-  padding: 0.05rem 0.3rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+@layer utilities {
+  .prose-serif {
+    @apply font-serif text-[19px] leading-[1.7] text-fg/90;
+  }
+  .prose-serif p {
+    @apply my-4;
+  }
+  .prose-serif strong {
+    @apply font-semibold text-fg;
+  }
+  .prose-serif em {
+    @apply italic;
+  }
+  .prose-serif a {
+    @apply text-accent underline-offset-2 hover:underline;
+  }
+
+  .pmid-sup {
+    @apply ml-0.5 inline-flex h-[1.15em] min-w-[1.15em] -translate-y-[0.4em] items-center justify-center rounded-md bg-accent-tint px-1 align-top text-[10px] font-semibold text-accent transition hover:bg-accent hover:text-bg;
+  }
+
+  .hide-scrollbar { scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+  .source-row.flash {
+    animation: rowflash 1.4s ease-out;
+  }
 }
 
-.pmid-cite {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.05rem 0.45rem;
-  margin: 0 0.1rem;
-  border-radius: 999px;
-  background: #e7eefc;
-  color: #2d63cc;
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  border: 1px solid #c8d8f8;
-  transition: background 120ms ease;
-}
-.pmid-cite:hover { background: #d6e3fb; }
-
-.evidence-card {
-  scroll-margin-top: 1rem;
-}
-.evidence-card.flash {
-  animation: flash 1.2s ease-out;
-}
-@keyframes flash {
-  0%   { background: #fff7d6; }
-  100% { background: white; }
+@keyframes rowflash {
+  0%   { box-shadow: 0 0 0 2px rgb(var(--accent)); }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
