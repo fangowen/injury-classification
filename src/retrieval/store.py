@@ -104,6 +104,7 @@ def search(
             "title": hit.payload.get("title"),
             "year": hit.payload.get("year"),
             "study_design": hit.payload.get("study_design"),
+            "authors": hit.payload.get("authors", []),
         }
         for hit in res.points
     ]

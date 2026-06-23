@@ -1,77 +1,75 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import EvidenceDrawer from "@/components/EvidenceDrawer";
-import QueryForm from "@/components/QueryForm";
+import { useCallback, useMemo, useRef, useState } from "react";
+import AskedQuestion from "@/components/AskedQuestion";
+import QueryComposer from "@/components/QueryComposer";
 import ReportStream from "@/components/ReportStream";
 import SafetyBanner from "@/components/SafetyBanner";
-import Timeline, { type TimelineStep } from "@/components/Timeline";
+import Sources from "@/components/Sources";
+import SourcesSidebar from "@/components/SourcesSidebar";
 import { openStream, startQuery } from "@/lib/sse";
 import type {
   AgentEvent,
   AthleteContextInput,
   Diagnosis,
+  FinalSource,
   RetrievedChunk,
 } from "@/lib/types";
 
+interface SubmittedQuery {
+  query: string;
+  athlete: AthleteContextInput;
+}
+
 export default function HomePage() {
   const [busy, setBusy] = useState(false);
-  const [steps, setSteps] = useState<TimelineStep[]>([]);
+  const [submitted, setSubmitted] = useState<SubmittedQuery | null>(null);
+
   const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
-  const [weakDiagnoses, setWeakDiagnoses] = useState<string[]>([]);
-  const [paperCounts, setPaperCounts] = useState<{ condition: string; count: number }[]>([]);
   const [results, setResults] = useState<RetrievedChunk[]>([]);
+  const [finalSources, setFinalSources] = useState<FinalSource[]>([]);
   const [report, setReport] = useState("");
   const [redFlags, setRedFlags] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [highlightPmid, setHighlightPmid] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const closeRef = useRef<(() => void) | null>(null);
 
-  function reset() {
-    setSteps([]);
+  function resetState() {
     setDiagnoses([]);
-    setWeakDiagnoses([]);
-    setPaperCounts([]);
     setResults([]);
+    setFinalSources([]);
     setReport("");
     setRedFlags(false);
     setError(null);
-    setHighlightPmid(null);
+    setElapsed(0);
+    setHighlightIndex(null);
+  }
+
+  function fullReset() {
+    if (closeRef.current) closeRef.current();
+    setBusy(false);
+    setSubmitted(null);
+    resetState();
   }
 
   const onEvent = useCallback((e: AgentEvent) => {
     switch (e.event) {
-      case "node_started":
-        setSteps((prev) => {
-          const open = prev.findIndex((s) => s.status === "running");
-          const next = [...prev];
-          if (open >= 0) next[open] = { ...next[open], status: "done" };
-          next.push({ node: e.data.node, status: "running" });
-          return next;
-        });
-        break;
       case "timing":
-        setSteps((prev) =>
-          prev.map((s) =>
-            s.node === e.data.node && s.status !== "done"
-              ? { ...s, status: "done", seconds: e.data.seconds }
-              : s,
-          ),
-        );
+        setElapsed((prev) => prev + e.data.seconds);
         break;
       case "diagnoses":
         setDiagnoses(e.data.diagnoses);
         setRedFlags(e.data.red_flags);
         break;
       case "search_results":
-        setPaperCounts(e.data.per_diagnosis);
         setResults((prev) => mergeResults(prev, e.data.results));
-        break;
-      case "weak_diagnoses":
-        setWeakDiagnoses(e.data.weak_diagnoses);
         break;
       case "rerank_complete":
         setResults(e.data.results);
+        break;
+      case "final_sources":
+        setFinalSources(e.data.sources);
         break;
       case "report_token":
         setReport((r) => r + e.data.token);
@@ -80,16 +78,11 @@ export default function HomePage() {
         setReport(e.data.report);
         break;
       case "done":
+      case "stream_end":
         setBusy(false);
-        setSteps((prev) =>
-          prev.map((s) => (s.status === "running" ? { ...s, status: "done" } : s)),
-        );
         break;
       case "error":
         setError(e.data.message);
-        setBusy(false);
-        break;
-      case "stream_end":
         setBusy(false);
         break;
     }
@@ -97,75 +90,121 @@ export default function HomePage() {
 
   async function handleSubmit(query: string, athlete: AthleteContextInput) {
     if (closeRef.current) closeRef.current();
-    reset();
+    resetState();
+    setSubmitted({ query, athlete });
     setBusy(true);
     try {
       const runId = await startQuery(query, athlete);
-      closeRef.current = openStream(runId, onEvent, () => {
-        setBusy(false);
-      });
-    } catch (e: any) {
-      setError(e.message ?? "Request failed");
+      closeRef.current = openStream(runId, onEvent, () => setBusy(false));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Request failed");
       setBusy(false);
     }
   }
 
-  function handleCitationClick(pmid: string) {
-    const el = document.getElementById(`evidence-${pmid}`);
+  function handleCitationClick(index: number) {
+    const el = document.getElementById(`source-${index}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setHighlightPmid(pmid);
-      setTimeout(() => setHighlightPmid(null), 1400);
-    } else {
-      window.open(`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`, "_blank");
+      setHighlightIndex(index);
+      setTimeout(() => setHighlightIndex(null), 1500);
     }
   }
 
+  const retrievedCount = useMemo(() => {
+    const pmids = new Set(results.map((r) => r.pmid).filter(Boolean));
+    return pmids.size;
+  }, [results]);
+
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-ink-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🏃</span>
-            <h1 className="text-base font-semibold text-ink-800">rehab-synth</h1>
-            <span className="text-xs text-ink-400">sports rehab evidence over PubMed</span>
+      <header className="border-b border-border bg-bg">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-bg">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            <span className="font-serif text-2xl font-semibold tracking-tight text-fg">Mend</span>
           </div>
-          <div className="text-xs text-ink-400">demo</div>
+          {submitted && (
+            <button type="button" onClick={fullReset} className="btn-ghost">
+              New question
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-        <section className="flex-1 min-w-0">
-          {redFlags && <SafetyBanner />}
-          {error && (
-            <div className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
-              {error}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 md:py-14">
+        {!submitted ? (
+          <div className="mx-auto max-w-3xl space-y-10">
+            <div className="space-y-3">
+              <h1 className="font-serif text-4xl font-medium leading-tight tracking-tight text-fg md:text-5xl">
+                What's bothering you?
+              </h1>
+              <p className="max-w-xl text-base text-muted md:text-lg">
+                Describe your symptoms in plain language. The agent generates a differential, pulls
+                supporting evidence from PubMed, and writes a concise answer with citations.
+              </p>
             </div>
-          )}
-          <Timeline
-            steps={steps}
-            diagnoses={diagnoses}
-            weakDiagnoses={weakDiagnoses}
-            paperCounts={paperCounts}
-          />
-          <ReportStream
-            text={report}
-            streaming={busy && report.length > 0}
-            onCitationClick={handleCitationClick}
-          />
-        </section>
-
-        <aside className="hidden w-96 shrink-0 md:block">
-          <div className="sticky top-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-              Evidence
-            </div>
-            <EvidenceDrawer results={results} highlightedPmid={highlightPmid} />
+            <QueryComposer onSubmit={handleSubmit} busy={busy} />
+            <div className="meta">Not medical advice · For educational use only</div>
           </div>
-        </aside>
-      </main>
+        ) : (
+          <div className="space-y-16">
+            {/* Above-the-fold: answer column + sticky compact sidebar */}
+            <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_300px] md:gap-12 lg:gap-16">
+              <div className="min-w-0 space-y-10">
+                <AskedQuestion
+                  query={submitted.query}
+                  diagnoses={diagnoses}
+                  retrievedCount={retrievedCount}
+                  elapsedSeconds={elapsed}
+                  sourceCount={finalSources.length || retrievedCount}
+                  streaming={busy}
+                />
 
-      <QueryForm onSubmit={handleSubmit} busy={busy} />
+                {redFlags && <SafetyBanner />}
+
+                {error && (
+                  <div className="rounded-2xl border border-red-500/40 bg-red-50/60 px-5 py-4 text-sm text-red-900">
+                    {error}
+                  </div>
+                )}
+
+                <ReportStream
+                  text={report}
+                  streaming={busy}
+                  onCitationClick={handleCitationClick}
+                />
+              </div>
+
+              <aside className="hidden md:block">
+                <div className="sticky top-6">
+                  <SourcesSidebar
+                    sources={finalSources}
+                    fallback={results}
+                    highlightedIndex={highlightIndex}
+                    loading={busy && finalSources.length === 0}
+                    onItemClick={handleCitationClick}
+                  />
+                </div>
+              </aside>
+            </div>
+
+            {/* Below-the-fold: full-width detailed sources */}
+            <section id="sources-detailed" className="border-t border-border pt-12">
+              <Sources
+                sources={finalSources}
+                fallback={results}
+                highlightedIndex={highlightIndex}
+                loading={busy && finalSources.length === 0}
+              />
+            </section>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

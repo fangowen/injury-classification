@@ -168,37 +168,74 @@ def search_node(state: AgentState) -> dict:
     return {"search_results": all_results}
 
 
+def _format_author(name: str) -> str:
+    """'Askling, Carl' -> 'Askling C'."""
+    if not name:
+        return ""
+    if "," in name:
+        last, first = [p.strip() for p in name.split(",", 1)]
+    else:
+        parts = name.strip().split()
+        if len(parts) < 2:
+            return name.strip()
+        last, first = parts[-1], " ".join(parts[:-1])
+    initials = "".join(p[0] for p in first.split() if p and p[0].isalpha())
+    return f"{last} {initials}".strip()
+
+
+def _author_line(authors: list[str]) -> str:
+    if not authors:
+        return "Unknown author"
+    head = _format_author(authors[0])
+    return f"{head} et al." if len(authors) > 1 else head
+
+
+TOP_K_SOURCES = 8
+
+
 def generate_report_node(state: AgentState) -> dict:
     _emit(state, "node_started", {"node": "synthesize"})
-    evidence_blocks = []
-    for dx in state["diagnoses"]:
-        relevant = [r for r in state["search_results"] if r.get("diagnosis") == dx["condition"]]
-        relevant = relevant[:5]
 
-        if not relevant:
-            evidence_blocks.append(
-                f"### {dx['condition']} ({dx['likelihood']} likelihood)\n"
-                f"Reasoning: {dx['reasoning']}\n"
-                f"Retrieved evidence: NONE FOUND\n"
-            )
-            continue
+    # search_results is reranked at this point (highest population fit first, ties broken by semantic score)
+    all_sources = list(state["search_results"])
+    top_sources = all_sources[:TOP_K_SOURCES]
 
-        papers_text = "\n".join([
-            f"  - [PMID: {r['pmid']}] ({r.get('study_design', 'unknown')}, {r.get('year', 'n.d.')}, "
-            f"population score {r.get('population_score', '?')}/5) "
-            f"\"{r['title']}\"\n    Excerpt: {r['text'][:250]}"
-            for r in relevant
+    indexed_sources = []
+    for i, s in enumerate(top_sources):
+        indexed_sources.append({
+            "index": i + 1,
+            "pmid": s.get("pmid", ""),
+            "title": s.get("title", ""),
+            "year": s.get("year"),
+            "study_design": s.get("study_design"),
+            "population_score": s.get("population_score"),
+            "population_reason": s.get("population_reason"),
+            "score": s.get("score"),
+            "text": s.get("text", ""),
+            "authors": s.get("authors", []),
+            "author_line": _author_line(s.get("authors", [])),
+            "diagnosis": s.get("diagnosis"),
+        })
+
+    _emit(state, "final_sources", {"sources": indexed_sources})
+
+    diagnoses_hint = "\n".join([
+        f"- {d['condition']} ({d['likelihood']} likelihood): {d['reasoning']}"
+        for d in state["diagnoses"]
+    ]) or "(no differentials)"
+
+    if not indexed_sources:
+        sources_block = "(no sources retrieved — answer must acknowledge this)"
+    else:
+        sources_block = "\n\n".join([
+            f"[{s['index']}] \"{s['title']}\" — {s['author_line']} · {s.get('study_design') or 'unknown'} · {s.get('year') or 'n.d.'} · pop-fit {s.get('population_score', '?')}/5\n"
+            f"    Excerpt: {s['text'][:320]}"
+            for s in indexed_sources
         ])
-        evidence_blocks.append(
-            f"### {dx['condition']} ({dx['likelihood']} likelihood)\n"
-            f"Reasoning: {dx['reasoning']}\n"
-            f"Retrieved evidence:\n{papers_text}"
-        )
 
-    evidence_section = "\n\n".join(evidence_blocks)
     weak = ", ".join(state["weak_diagnoses"]) or "none"
 
-    prompt = f"""You are a sports medicine evidence summarizer. Given a user's injury description and retrieved medical literature, write a structured report that helps them understand the likely conditions and what current research says about each.
+    prompt = f"""You are a sports medicine evidence summarizer. Given a user's injury description and a numbered list of retrieved sources, write a concise answer that synthesizes what current evidence suggests.
 
 USER DESCRIPTION:
 {state["user_query"]}
@@ -207,45 +244,34 @@ ATHLETE CONTEXT:
 {state["athlete_context"]}
 
 RED FLAGS DETECTED: {state["red_flags"]}
-WEAK COVERAGE DIAGNOSES (limited evidence retrieved): {weak}
+WEAK COVERAGE DIAGNOSES: {weak}
 
-RETRIEVED EVIDENCE BY DIAGNOSIS:
-{evidence_section}
+DIFFERENTIAL HYPOTHESES (the agent's internal frame — synthesize across these, do not enumerate them in the answer):
+{diagnoses_hint}
 
-RULES (follow strictly):
-1. You are NOT diagnosing. Phrase findings as "this fits the pattern of X" or "studies suggest..." — never "you have X."
-2. Every clinical claim in the Full report must end with a PMID citation in the format [PMID: 12345678]. If you cannot cite, do not claim.
-3. If RED FLAGS DETECTED is True, BOTH the Take-home AND the Full report MUST begin with a clear safety warning advising the user to see a clinician promptly.
-4. For any condition listed in WEAK COVERAGE DIAGNOSES, begin that section with "Evidence specific to this condition was limited in the available sources."
-5. Favor higher-tier evidence: systematic reviews and RCTs over case reports. When citing weaker evidence, say so.
-6. If two cited papers disagree, surface the disagreement explicitly: "Some evidence supports X [PMID: ...], while other studies challenge this [PMID: ...]."
-7. Note population fit: if a population_score is low for an otherwise relevant study, mention that the study population may not match the user.
+SOURCES (numbered, ordered by population fit):
+{sources_block}
 
-OUTPUT FORMAT (markdown, exactly these sections in this order, use these exact headings):
+RULES:
+1. You are NOT diagnosing. Phrase findings as "this fits the pattern of X" or "evidence suggests..." — never "you have X."
+2. Cite using the numbered source indices in square brackets, e.g. [1], [2], [3,4]. NEVER write PMIDs in the prose. Every clinical claim must be cited.
+3. Favor higher-tier evidence (systematic reviews and RCTs over case reports). When relying on weaker evidence, name the design briefly.
+4. If two sources disagree, surface the disagreement explicitly with both citations.
+5. Note population fit when a source's study population may not match the user.
+6. If RED FLAGS DETECTED is True, lead with a brief safety prompt in the very first sentence of the synthesis, advising the user to see a clinician.
 
-## Take-home
-2-3 sentences, plain language, advice-first. Name the most likely condition (using "this fits the pattern of..." framing), give ONE practical next action the user can do this week, and state clearly whether they should see a clinician soon. No PMID citations in this section — keep it scannable. If RED FLAGS DETECTED is True, lead with the safety warning here.
+OUTPUT FORMAT (markdown, in this exact order, using these exact headings):
 
-## Full report
+## Synthesis
+Two to four short paragraphs. Bold the central claim of each paragraph using **markdown bold**. Use [N] citations inline. Plain, conversational prose — write for the athlete, not for a clinician.
 
-### ⚠️ Safety Note
-(Only include this subsection if RED FLAGS DETECTED is True. Otherwise omit entirely.)
+## Bottom line
+ONE short paragraph (2-3 sentences). Plain language, no citations, no hedging. Lead with the practical answer (e.g. a target timeframe or condition), then the criteria/conditions that change it.
 
-### Most Likely Conditions
-For each diagnosis in order of likelihood:
+## Next steps
+Exactly three numbered items. Each item starts with a short bold action title followed by a period, then one sentence of plain-language detail. Examples of good titles: "Pass the strength gate.", "Rebuild running volume.", "Confirm mechanics."
 
-#### {{condition name}} ({{likelihood}})
-What the evidence says: 2-4 sentences summarizing the strongest supporting evidence, with PMID citations.
-Treatment approaches studied: bullet list of approaches with citations.
-Caveats: any population mismatches, conflicting findings, or weak coverage notes.
-
-### Limitations of This Report
-Brief honest note about what the retrieved evidence does and doesn't cover.
-
-### Suggested Next Steps
-2-3 sentences of general next-step guidance (e.g., when to see a sports medicine physician, what to track). Do NOT prescribe specific exercises or treatments.
-
-Write the report now."""
+Write the answer now."""
     full_text = ""
     with llm.messages.stream(
         model="claude-sonnet-4-5",

@@ -8,25 +8,45 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: {
-          50: "#f6f7f9",
-          100: "#eceef2",
-          200: "#d5d9e2",
-          300: "#aab3c2",
-          400: "#7c8699",
-          500: "#586275",
-          600: "#3f4859",
-          700: "#2c3342",
-          800: "#1c212c",
-          900: "#11141c",
-        },
-        accent: {
-          DEFAULT: "#3e7cf0",
-          hover: "#2d63cc",
-        },
+        bg: "rgb(var(--bg) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        "surface-2": "rgb(var(--surface-2) / <alpha-value>)",
+        border: "rgb(var(--border) / <alpha-value>)",
+        fg: "rgb(var(--fg) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        subtle: "rgb(var(--subtle) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
+        "accent-tint": "rgb(var(--accent-tint) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
+        serif: ["var(--font-serif)", "Source Serif 4", "Georgia", "Times New Roman", "serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SF Mono", "Menlo", "Monaco", "Consolas", "monospace"],
+      },
+      keyframes: {
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(2px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "0.55" },
+          "50%": { opacity: "1" },
+        },
+        "bar-fill": {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 220ms ease-out",
+        shimmer: "shimmer 2.2s linear infinite",
+        "pulse-soft": "pulse-soft 1.6s ease-in-out infinite",
+        "bar-fill": "bar-fill 700ms ease-out forwards",
       },
     },
   },
