@@ -1,3 +1,6 @@
+
+
+
 # rehab-synth
 
 A sports-medicine evidence summarizer. Describe an athlete's symptoms; an agent
@@ -5,6 +8,8 @@ generates a differential, retrieves matching papers from a local PubMed index,
 reranks them by population fit, and writes a concise answer with citations.
 
 Built on LangGraph, Qdrant, Anthropic, and PubMed's E-utilities.
+
+[![Watch the Demo](https://youtube.com)](https://youtube.com)
 
 ## Stack
 
