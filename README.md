@@ -1,6 +1,4 @@
 
-
-
 # rehab-synth
 
 A sports-medicine evidence summarizer. Describe an athlete's symptoms; an agent
