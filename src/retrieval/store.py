@@ -31,13 +31,26 @@ def init_collection(client: QdrantClient):
     else:
         print(f"Collection {COLLECTION_NAME} already exists")
 
+_embedding_model = None
+
+
+def _get_embedding_model():
+    """Load the BGE model once per process. Instantiating TextEmbedding loads
+    ~1.3GB of weights, so caching it is the difference between one load and one
+    load per search/ingest call."""
+    global _embedding_model
+    if _embedding_model is None:
+        from fastembed import TextEmbedding
+        _embedding_model = TextEmbedding("BAAI/bge-large-en-v1.5")
+    return _embedding_model
+
+
 def embed_text(text: list[str])-> list[list[float]]:
     """Embed a list of text strings using FastEmbed
     Could swap for other models later -> look into voyage and openai embeddings
     """
 
-    from fastembed import TextEmbedding
-    model = TextEmbedding("BAAI/bge-large-en-v1.5")
+    model = _get_embedding_model()
     embeddings = list(model.embed(text))
     return [e.tolist() for e in embeddings]
 
