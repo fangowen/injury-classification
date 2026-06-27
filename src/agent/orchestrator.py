@@ -53,25 +53,25 @@ def diagnose_node(state: AgentState) -> dict:
     _emit(state, "node_started", {"node": "diagnose"})
     prompt = f""" You are a sports medicine research assistant. Given an athlete's symptom description, generate a differential of likely conditions to research in medical literature.
     ATHLETE CONTEXT: {state["athlete_context"]}
-    SYMPTON DESCRIPTION: {state["user_query"]}
+    SYMPTOM DESCRIPTION: {state["user_query"]}
 
     Generate the 2-4 most likely conditions. For each condition, provide:
      - "condition": the formal medical condition name ("lateral epicondylitis" instead of "elbow pain")
-     - "search_terms: a PubMed query string using the quoted medical term plus rehabilitation qualifiers, fomatted like: "lateral epicondylitis" AND rehabilitation AND exercise
+     - "search_terms": a PubMed query string using the quoted medical term plus rehabilitation qualifiers, formatted like: 'lateral epicondylitis' AND rehabilitation AND exercise
      - "likelihood": "high", "moderate", or "low" - informed by BOTH the symptoms and the athlete's sport/age/activity (a gripping sport makes forearm tendinopathies more likely)
      - "reasoning": a one sentence on why this fits
 
-     Also include a top-level field "red_flags": true if the description mentions numbness, severe swelling, acute tramua, inability to bear weight, or symptoms suggesting they should see a doctor immediately. Otherwise false.
+     Also include a top-level field "red_flags": true if the description mentions numbness, severe swelling, acute trauma, inability to bear weight, or symptoms suggesting they should see a doctor immediately. Otherwise false.
 
     Respond with ONLY a JSON object in this exact format, no markdown, no preamble:
     {{
         "red_flags": false,
-        "differentials: [
+        "differentials": [
             {{
-                "condition": ...,
-                "search_terms": ...,
-                "likelihood": ...,
-                "reasoning": ...,
+                "condition": "...",
+                "search_terms": "...",
+                "likelihood": "...",
+                "reasoning": "..."
             }}
         ]
     }}

@@ -22,12 +22,16 @@ from .schemas import QueryRequest, QueryStarted
 
 
 async def _reaper_loop():
-    """Background task: drop unconsumed runs whose creator never connected."""
+    """Background task: drop unconsumed runs whose creator never connected.
+
+    Only removes the run from the registry lookup. The worker thread that owns
+    the run always releases its concurrency slot in its own `finally`, so the
+    reaper must NOT release here too — doing so double-frees the slot and lets
+    the concurrency cap leak above MAX_CONCURRENT_RUNS.
+    """
     while True:
         try:
-            expired = await registry.reap_unconsumed(UNCONSUMED_RUN_TTL_S)
-            for _ in expired:
-                await concurrency.release()
+            await registry.reap_unconsumed(UNCONSUMED_RUN_TTL_S)
         except Exception:
             pass
         await asyncio.sleep(15)
@@ -66,19 +70,22 @@ async def health():
 async def start_query(req: QueryRequest, request: Request) -> QueryStarted:
     ip = _client_ip(request)
 
-    retry_after = await rate_limiter.check(ip)
-    if retry_after is not None:
-        raise HTTPException(
-            status_code=429,
-            detail="rate limit exceeded",
-            headers={"Retry-After": str(retry_after)},
-        )
-
+    # Acquire the concurrency slot first so a capacity rejection doesn't consume
+    # the caller's per-IP rate-limit token for a request that never ran.
     if not await concurrency.try_acquire():
         raise HTTPException(
             status_code=429,
             detail="server is at capacity, try again shortly",
             headers={"Retry-After": "30"},
+        )
+
+    retry_after = await rate_limiter.check(ip)
+    if retry_after is not None:
+        await concurrency.release()
+        raise HTTPException(
+            status_code=429,
+            detail="rate limit exceeded",
+            headers={"Retry-After": str(retry_after)},
         )
 
     run = await registry.create()
