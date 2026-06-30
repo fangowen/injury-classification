@@ -13,9 +13,9 @@ function ScoreBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(1, value));
   return (
     <div className="mt-4 flex items-center gap-3">
-      <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-border/60">
+      <div className="h-[3px] flex-1 overflow-hidden bg-border-light">
         <div
-          className="h-full origin-left rounded-full bg-accent/85 animate-bar-fill"
+          className="h-full origin-left bg-fg animate-bar-fill"
           style={{ transform: `scaleX(${pct})` }}
         />
       </div>
@@ -60,12 +60,12 @@ export default function Sources({ sources, fallback, highlightedIndex, loading }
   if (loading && list.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-sans text-base font-semibold text-fg">Sources</h2>
-          <span className="meta">retrieving…</span>
+        <div className="flex items-baseline justify-between border-b border-border pb-3">
+          <h2 className="font-display text-xl font-bold uppercase tracking-tight text-fg">Sources</h2>
+          <span className="meta uppercase tracking-widest">retrieving…</span>
         </div>
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 animate-shimmer rounded-xl border border-border bg-gradient-to-r from-surface via-surface-2 to-surface bg-[length:200%_100%]" />
+          <div key={i} className="h-28 animate-shimmer border border-border-light bg-gradient-to-r from-surface-2 via-border-light to-surface-2 bg-[length:200%_100%]" />
         ))}
       </div>
     );
@@ -75,9 +75,9 @@ export default function Sources({ sources, fallback, highlightedIndex, loading }
 
   return (
     <section className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-sans text-base font-semibold text-fg">Sources</h2>
-        <span className="meta">ranked by relevance</span>
+      <div className="flex items-baseline justify-between border-b border-border pb-3">
+        <h2 className="font-display text-xl font-bold uppercase tracking-tight text-fg">Sources</h2>
+        <span className="meta uppercase tracking-widest">ranked by relevance</span>
       </div>
 
       <div className="space-y-4">
@@ -94,12 +94,12 @@ export default function Sources({ sources, fallback, highlightedIndex, loading }
               href={s.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${s.pmid}/` : undefined}
               target="_blank"
               rel="noreferrer"
-              className={`source-row block rounded-2xl border border-border bg-surface px-5 py-5 transition hover:border-accent/40 hover:bg-surface/80 md:px-6 ${
-                isHi ? "flash border-accent" : ""
+              className={`source-row group block border-2 border-border bg-surface px-5 py-5 transition-all duration-100 hover:border-[3px] md:px-6 ${
+                isHi ? "flash" : ""
               }`}
             >
               <div className="flex items-start gap-4">
-                <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent-tint font-mono text-xs text-accent">
+                <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center border border-border bg-bg font-mono text-xs text-fg transition-colors duration-100 group-hover:bg-fg group-hover:text-bg">
                   {s.index}
                 </span>
                 <div className="min-w-0 flex-1">

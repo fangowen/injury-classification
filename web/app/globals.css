@@ -4,16 +4,18 @@
 
 @layer base {
   :root {
-    --bg:          245 241 232;  /* warm cream */
-    --surface:     252 249 240;  /* lighter cream */
-    --surface-2:   238 232 217;  /* deeper cream */
-    --border:      223 215 195;  /* tan border */
-    --fg:           28  28  28;  /* near-black */
-    --muted:       115 108  92;  /* warm gray */
-    --subtle:      165 156 136;  /* lighter warm gray */
-    --accent:       54  94  71;  /* forest green */
-    --accent-soft: 217 229 214;  /* pale mint */
-    --accent-tint: 233 240 229;  /* even paler mint for chip */
+    /* Minimalist Monochrome — pure black & white. No accent colors, ever. */
+    --bg:           255 255 255;  /* pure white */
+    --surface:      255 255 255;  /* white cards */
+    --surface-2:    245 245 245;  /* off-white (#F5F5F5) for subtle fills */
+    --border:         0   0   0;  /* black borders */
+    --border-light: 229 229 229;  /* light gray dividers (#E5E5E5) */
+    --fg:             0   0   0;  /* pure black */
+    --muted:         82  82  82;  /* secondary text (#525252) */
+    --subtle:       115 115 115;  /* tertiary / placeholders */
+    --accent:         0   0   0;  /* black IS the accent */
+    --accent-soft:  245 245 245;  /* off-white */
+    --accent-tint:  245 245 245;  /* off-white */
   }
 
   html, body {
@@ -22,43 +24,73 @@
     height: 100%;
   }
   body {
-    font-feature-settings: "ss01", "cv02", "cv03";
+    position: relative;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Required global texture: faint horizontal hairlines + paper noise.
+     Keeps large white fields from reading as flat. Fixed + non-interactive. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      #000 1px,
+      #000 2px
+    );
+    background-size: 100% 4px;
+    opacity: 0.015;
+  }
+  /* Keep app content above the texture layer. */
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
   ::selection {
-    background-color: rgb(var(--accent) / 0.20);
+    background-color: rgb(var(--fg));
+    color: rgb(var(--bg));
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-border bg-surface;
+    @apply border border-border bg-surface;
   }
+  /* Uppercase mono label, sharp corners, hairline black box. */
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-tint px-3 py-1 text-sm font-medium text-accent;
+    @apply inline-flex items-center gap-1.5 border border-border bg-transparent px-3 py-1 font-mono text-xs font-medium uppercase tracking-widest text-fg;
   }
   .meta {
     @apply font-mono text-xs tracking-tight text-muted;
   }
-  .pill-input {
-    @apply w-full rounded-full border border-border bg-surface px-6 py-4 text-base text-fg shadow-[0_1px_0_rgba(0,0,0,0.02)] outline-none transition placeholder:text-subtle focus:border-accent/60 focus:ring-2 focus:ring-accent/15 disabled:opacity-60;
+  /* Rectangular text field — border thickens on focus, no colored ring. */
+  .field {
+    @apply w-full border-2 border-border bg-bg px-5 py-4 text-base text-fg outline-none transition-[border-width,border-color] duration-100 placeholder:italic placeholder:text-subtle focus:border-[3px] disabled:opacity-60;
   }
+  /* Square send button — inverts on hover/focus. */
   .btn-send {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-bg shadow-sm transition hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border bg-fg text-bg transition-colors duration-100 hover:bg-bg hover:text-fg focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-border disabled:cursor-not-allowed disabled:opacity-40;
   }
+  /* Secondary / outline action — uppercase, inverts on hover. */
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border bg-transparent px-4 py-2 text-sm text-muted transition hover:bg-surface-2 hover:text-fg;
+    @apply inline-flex items-center justify-center gap-2 border-2 border-border bg-transparent px-5 py-2 text-xs font-medium uppercase tracking-widest text-fg transition-colors duration-100 hover:bg-fg hover:text-bg focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-border;
   }
+  /* Compact bordered chip-button (samples, context toggle) — inverts on hover. */
   .btn-context {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted transition hover:border-accent/40 hover:text-fg;
+    @apply inline-flex items-center gap-1.5 border border-border bg-bg px-3 py-1.5 text-xs uppercase tracking-wider text-fg transition-colors duration-100 hover:bg-fg hover:text-bg focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-border;
   }
 }
 
 @layer utilities {
   .prose-serif {
-    @apply font-serif text-[19px] leading-[1.7] text-fg/90;
+    @apply font-serif text-[19px] leading-[1.7] text-fg;
   }
   .prose-serif p {
     @apply my-4;
@@ -70,22 +102,24 @@
     @apply italic;
   }
   .prose-serif a {
-    @apply text-accent underline-offset-2 hover:underline;
+    @apply text-fg underline underline-offset-2 decoration-1;
   }
 
+  /* Citation reference — bordered square, inverts on hover/focus. */
   .pmid-sup {
-    @apply ml-0.5 inline-flex h-[1.15em] min-w-[1.15em] -translate-y-[0.4em] items-center justify-center rounded-md bg-accent-tint px-1 align-top text-[10px] font-semibold text-accent transition hover:bg-accent hover:text-bg;
+    @apply ml-0.5 inline-flex h-[1.2em] min-w-[1.2em] -translate-y-[0.4em] items-center justify-center border border-border px-1 align-top text-[10px] font-semibold leading-none text-fg transition-colors duration-100 hover:bg-fg hover:text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-border;
   }
 
   .hide-scrollbar { scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
 
   .source-row.flash {
-    animation: rowflash 1.4s ease-out;
+    animation: rowflash 1.2s ease-out;
   }
 }
 
+/* Highlight pulse uses black (the accent) — a sharp ring, no color. */
 @keyframes rowflash {
-  0%   { box-shadow: 0 0 0 2px rgb(var(--accent)); }
+  0%   { box-shadow: 0 0 0 2px rgb(var(--fg)); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }

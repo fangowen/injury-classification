@@ -137,7 +137,7 @@ function parseSteps(md: string): Step[] {
 }
 
 function BlinkingCursor() {
-  return <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] animate-pulse-soft bg-accent align-middle" />;
+  return <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] animate-pulse-soft bg-fg align-middle" />;
 }
 
 export default function ReportStream({ text, streaming, onCitationClick }: Props) {
@@ -147,9 +147,9 @@ export default function ReportStream({ text, streaming, onCitationClick }: Props
     if (!streaming) return null;
     return (
       <div className="space-y-3 pt-2">
-        <div className="h-4 w-3/4 animate-shimmer rounded bg-gradient-to-r from-surface via-surface-2 to-surface bg-[length:200%_100%]" />
-        <div className="h-4 w-5/6 animate-shimmer rounded bg-gradient-to-r from-surface via-surface-2 to-surface bg-[length:200%_100%]" />
-        <div className="h-4 w-2/3 animate-shimmer rounded bg-gradient-to-r from-surface via-surface-2 to-surface bg-[length:200%_100%]" />
+        <div className="h-4 w-3/4 animate-shimmer bg-gradient-to-r from-surface-2 via-border-light to-surface-2 bg-[length:200%_100%]" />
+        <div className="h-4 w-5/6 animate-shimmer bg-gradient-to-r from-surface-2 via-border-light to-surface-2 bg-[length:200%_100%]" />
+        <div className="h-4 w-2/3 animate-shimmer bg-gradient-to-r from-surface-2 via-border-light to-surface-2 bg-[length:200%_100%]" />
       </div>
     );
   }
@@ -192,8 +192,8 @@ export default function ReportStream({ text, streaming, onCitationClick }: Props
       )}
 
       {bottomLine && (
-        <div className="rounded-2xl border border-border bg-surface/60 px-6 py-5 md:px-7 md:py-6">
-          <div className="meta mb-2 uppercase tracking-[0.18em]">Bottom line</div>
+        <div className="border-2 border-border border-t-[6px] bg-surface-2 px-6 py-5 md:px-7 md:py-6">
+          <div className="meta mb-2 uppercase tracking-[0.2em] text-fg">Bottom line</div>
           <div className="prose-serif text-[17px] leading-[1.65]">
             {paragraphs(bottomLine).map((p, i) => (
               <p key={i} className="!my-0">
@@ -206,10 +206,10 @@ export default function ReportStream({ text, streaming, onCitationClick }: Props
       )}
 
       {steps.length > 0 && (
-        <ol className="divide-y divide-border border-t border-border">
+        <ol className="divide-y divide-border-light border-t-2 border-border">
           {steps.map((s, i) => (
             <li key={i} className="flex gap-5 py-5">
-              <span className="meta mt-1 w-6 shrink-0 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+              <span className="meta mt-1 w-6 shrink-0 tabular-nums text-fg">{String(i + 1).padStart(2, "0")}</span>
               <div className="flex-1">
                 {s.title && (
                   <span className="font-semibold text-fg">{renderInline(s.title)} </span>

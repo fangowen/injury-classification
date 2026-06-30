@@ -38,11 +38,11 @@ export default function SourcesSidebar({
   if (loading && list.length === 0) {
     return (
       <div className="space-y-3">
-        <div className="meta uppercase tracking-[0.18em]">Sources</div>
+        <div className="meta uppercase tracking-[0.2em] text-fg">Sources</div>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-14 animate-shimmer rounded-lg border border-border bg-gradient-to-r from-surface via-surface-2 to-surface bg-[length:200%_100%]"
+            className="h-14 animate-shimmer border border-border-light bg-gradient-to-r from-surface-2 via-border-light to-surface-2 bg-[length:200%_100%]"
           />
         ))}
       </div>
@@ -54,10 +54,10 @@ export default function SourcesSidebar({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <div className="meta uppercase tracking-[0.18em]">Sources</div>
+        <div className="meta uppercase tracking-[0.2em] text-fg">Sources</div>
         <span className="meta">{list.length}</span>
       </div>
-      <ol className="space-y-1">
+      <ol className="space-y-px">
         {list.map((s) => {
           const isHi = highlightedIndex === s.index;
           return (
@@ -65,13 +65,13 @@ export default function SourcesSidebar({
               <button
                 type="button"
                 onClick={() => onItemClick?.(s.index)}
-                className={`group flex w-full gap-3 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-border hover:bg-surface ${
-                  isHi ? "border-accent/60 bg-accent-tint/40" : ""
+                className={`group flex w-full gap-3 border border-transparent px-2 py-2 text-left transition-colors duration-100 hover:border-border hover:bg-surface-2 ${
+                  isHi ? "border-border border-l-4 bg-surface-2" : ""
                 }`}
               >
                 <span
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-mono text-[11px] ${
-                    isHi ? "bg-accent text-bg" : "bg-accent-tint text-accent"
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border border-border font-mono text-[11px] ${
+                    isHi ? "bg-fg text-bg" : "bg-bg text-fg"
                   }`}
                 >
                   {s.index}
