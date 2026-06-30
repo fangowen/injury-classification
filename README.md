@@ -1,5 +1,5 @@
 
-# rehab-synth
+# injury-classification
 
 A sports-medicine evidence summarizer. Describe an athlete's symptoms; an agent
 generates a differential, retrieves matching papers from a local PubMed index,
