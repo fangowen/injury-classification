@@ -118,15 +118,15 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border bg-bg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-bg">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <header className="border-b-2 border-border bg-bg">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 md:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center border border-border bg-fg text-bg">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </div>
-            <span className="font-serif text-2xl font-semibold tracking-tight text-fg">Mend</span>
+            <span className="font-display text-2xl font-bold uppercase tracking-tight text-fg">Mend</span>
           </div>
           {submitted && (
             <button type="button" onClick={fullReset} className="btn-ghost">
@@ -139,17 +139,22 @@ export default function HomePage() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 md:py-14">
         {!submitted ? (
           <div className="mx-auto max-w-3xl space-y-10">
-            <div className="space-y-3">
-              <h1 className="font-serif text-4xl font-medium leading-tight tracking-tight text-fg md:text-5xl">
-                What's bothering you?
+            <div className="space-y-6">
+              {/* Hero decorative punctuation — thick rule + bordered square. */}
+              <div className="flex items-center gap-3">
+                <span className="h-1 w-16 bg-fg" />
+                <span className="h-2.5 w-2.5 border border-border" />
+              </div>
+              <h1 className="font-display text-5xl font-bold leading-[0.95] tracking-tight text-fg md:text-7xl">
+                What&apos;s bothering you?
               </h1>
-              <p className="max-w-xl text-base text-muted md:text-lg">
+              <p className="max-w-xl font-serif text-lg leading-relaxed text-muted md:text-xl">
                 Describe your symptoms in plain language. The agent generates a differential, pulls
                 supporting evidence from PubMed, and writes a concise answer with citations.
               </p>
             </div>
             <QueryComposer onSubmit={handleSubmit} busy={busy} />
-            <div className="meta">Not medical advice · For educational use only</div>
+            <div className="meta uppercase tracking-widest">Not medical advice · For educational use only</div>
           </div>
         ) : (
           <div className="space-y-16">
@@ -168,8 +173,9 @@ export default function HomePage() {
                 {redFlags && <SafetyBanner />}
 
                 {error && (
-                  <div className="rounded-2xl border border-red-500/40 bg-red-50/60 px-5 py-4 text-sm text-red-900">
-                    {error}
+                  <div className="border border-border border-l-[6px] bg-surface-2 px-5 py-4">
+                    <div className="meta mb-1 uppercase tracking-widest text-fg">Error</div>
+                    <div className="font-serif text-[15px] text-fg">{error}</div>
                   </div>
                 )}
 
@@ -194,7 +200,7 @@ export default function HomePage() {
             </div>
 
             {/* Below-the-fold: full-width detailed sources */}
-            <section id="sources-detailed" className="border-t border-border pt-12">
+            <section id="sources-detailed" className="border-t-4 border-border pt-12">
               <Sources
                 sources={finalSources}
                 fallback={results}

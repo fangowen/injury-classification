@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { JetBrains_Mono, Playfair_Display, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// Display / headline serif — high-contrast, editorial.
+const display = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["400", "700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
   display: "swap",
 });
 
+// Body serif — highly readable long-form.
 const serif = Source_Serif_4({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -15,6 +19,7 @@ const serif = Source_Serif_4({
   display: "swap",
 });
 
+// Labels, metadata, technical details.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -29,8 +34,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${serif.variable} ${mono.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="en" className={`${display.variable} ${serif.variable} ${mono.variable}`}>
+      <body className="font-serif antialiased">{children}</body>
     </html>
   );
 }

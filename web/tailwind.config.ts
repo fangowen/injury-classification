@@ -12,6 +12,7 @@ const config: Config = {
         surface: "rgb(var(--surface) / <alpha-value>)",
         "surface-2": "rgb(var(--surface-2) / <alpha-value>)",
         border: "rgb(var(--border) / <alpha-value>)",
+        "border-light": "rgb(var(--border-light) / <alpha-value>)",
         fg: "rgb(var(--fg) / <alpha-value>)",
         muted: "rgb(var(--muted) / <alpha-value>)",
         subtle: "rgb(var(--subtle) / <alpha-value>)",
@@ -20,7 +21,7 @@ const config: Config = {
         "accent-tint": "rgb(var(--accent-tint) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
+        display: ["var(--font-display)", "Playfair Display", "Georgia", "Times New Roman", "serif"],
         serif: ["var(--font-serif)", "Source Serif 4", "Georgia", "Times New Roman", "serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SF Mono", "Menlo", "Monaco", "Consolas", "monospace"],
       },
