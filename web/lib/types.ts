@@ -59,5 +59,5 @@ export type AgentEvent =
   | { event: "report_token"; data: { token: string } }
   | { event: "report_complete"; data: { report: string } }
   | { event: "done"; data: { red_flags: boolean; weak_diagnoses: string[]; ingest_attempts: number } }
-  | { event: "error"; data: { message: string; trace?: string } }
+  | { event: "error"; data: { message: string; reference?: string } }
   | { event: "stream_end"; data: Record<string, never> };

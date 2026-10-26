@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import traceback
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -19,6 +19,8 @@ from .limits import (
     rate_limiter,
 )
 from .schemas import QueryRequest, QueryStarted
+
+logger = logging.getLogger(__name__)
 
 
 async def _reaper_loop():
@@ -102,8 +104,14 @@ async def start_query(req: QueryRequest, request: Request) -> QueryStarted:
                 "weak_diagnoses": result.get("weak_diagnoses", []),
                 "ingest_attempts": result.get("ingest_attempts", 0),
             })
-        except Exception as e:
-            emit("error", {"message": str(e), "trace": traceback.format_exc()})
+        except Exception:
+            # Keep internals (tracebacks, file paths, provider error text) in the server
+            # log. The browser only gets a fixed message and a reference to find that log.
+            logger.exception("run %s failed", run.id)
+            emit("error", {
+                "message": f"Something went wrong generating your report. Reference: {run.id}",
+                "reference": run.id,
+            })
         finally:
             asyncio.run_coroutine_threadsafe(run.queue.put(SENTINEL), loop)
             asyncio.run_coroutine_threadsafe(concurrency.release(), loop)
